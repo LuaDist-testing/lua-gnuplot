@@ -1,25 +1,25 @@
 -- This file was automatically generated for the LuaDist project.
 
 package = "lua-gnuplot"
-version = "0.1-1"
+version = "0.2-1"
 
 -- LuaDist source
 source = {
-  tag = "0.1-1",
+  tag = "0.2-1",
   url = "git://github.com/LuaDist-testing/lua-gnuplot.git"
 }
 -- Original source
 -- source = {
---     url = "https://bitbucket.org/lucashnegri/lua-gnuplot/get/v0.1.tar.gz",
---     md5 = "bfc91365bf3a0cc35df02b757961ab26",
---     dir = "lucashnegri-lua-gnuplot-6e13225c4faf",
+--     url = "https://bitbucket.org/lucashnegri/lua-gnuplot/get/v0.2.tar.bz2",
+--     md5 = "15e010691ab518b9b1b55e1d257f378a",
+--     dir = "lucashnegri-lua-gnuplot-6119390145a8",
 -- }
 
 description = {
     summary    = "Lua interface for gnuplot",
     detailed   = [[
-    lua-gnuplot is a small script to help interfacing with gnuplot. It works by
-    generating a [gnuplot][1] script from a Lua plot definition and calling the
+    lua-gnuplot is a small library for using gnuplot in a Lua program. It works by
+    generating a gnuplot script from a Lua plot definition and calling the
     gnuplot program for you.
     ]],
     homepage   = "https://bitbucket.org/lucashnegri/lua-gnuplot",

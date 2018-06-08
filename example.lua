@@ -5,8 +5,8 @@ local gp = require('gnuplot')
 
 local g = gp{
     -- all optional, with sane defaults
-    width  = 600,
-    height = 400,
+    width  = 640,
+    height = 480,
     xlabel = "X axis",
     ylabel = "Y axis",
     key    = "top left",
@@ -46,4 +46,6 @@ local g = gp{
 }:plot('output.png')
 
 -- plot with other terminals
-g:plot('output.svg')
+--g:plot('output.svg')
+--g:plot('output.pdf')
+--g:plot('output.wxt')

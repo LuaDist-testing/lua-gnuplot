@@ -74,13 +74,19 @@ local special = {
 gnuplot.terminal = {
     png = "pngcairo enhanced",
     svg = "svg dashed enhanced",
+    pdf = "pdfcairo linewidth 4 rounded fontscale 1.0",
+    wxt = "wxt enhanced",
 }
 
 local options = {
     -- header
     function(g, code)
-        add(code, 'set terminal %s size %d, %d font "%s,%d"',
-            gnuplot.terminal[g._type], g.width, g.height, g.fname, g.fsize)
+        local tm   = gnuplot.terminal[g._type]
+        local size = ""
+        if g.width and g.height then
+            size = ("size %s, %s"):format(g.width, g.height)
+        end
+        add(code, 'set terminal %s %s font "%s,%d"', tm, size, g.fname, g.fsize)
     end,
     
     -- configs
@@ -109,7 +115,7 @@ local options = {
 function gnuplot.codegen(g, cmd, path)
     g._type  = g.type or path:match("%.([^%.]+)$")
     g.type   = nil
-    g.output = path
+    if g._type ~= 'wxt' then g.output = path end
 
     local code = {}
     for _, f in ipairs(options) do
@@ -134,7 +140,9 @@ function gnuplot.do_plot(g, cmd, path)
     local code = gnuplot.codegen(g, cmd, path)
     local name = write_temp_file( code )
     
-    os.execute( string.format("%s %s",  gnuplot.bin, name) )
+    local opt = ""
+    if g._type == "wxt" then opt = '--persist' end
+    os.execute( string.format("%s %s %s",  gnuplot.bin, opt, name) )
     
     return g
 end
@@ -161,8 +169,6 @@ plot_mt = {
 
     -- defaults
     __index = {
-        width  = 500,
-        height = 400,
         fname  = "Arial",
         fsize  = 12,
         plot   = gnuplot.plot,
