@@ -10,6 +10,9 @@ local g = gp{
     xlabel = "X axis",
     ylabel = "Y axis",
     key    = "top left",
+    consts = {
+        gamma = 2.5
+    },
     
     data = {
         gp.file {   -- plot from a file
@@ -36,11 +39,27 @@ local g = gp{
             
             range = {-2, 10, 0.01},     -- optional
             width = 3,                  -- optional
+            title = '3sin(2x) + 4',     -- optional
+            with  = 'lines',
         },
         
         gp.gpfunc { -- plot from a native gnuplot function
-            "2.5*sin(1.8*x) + 3",
+            "gamma*sin(1.8*x) + 3",
             width = 2,
+            title = 'gamma sin(1.8x) + 3',
+        },
+        
+        gp.array {
+            {
+                {2,3,4,5,6,7,8},    -- x
+                {4,3,2,1,2,3,4},    -- y
+                {1,2,5,2,2,3,2},    -- error
+            },
+            
+            title = 'Error bars',
+            with  = 'yerrorbars',
+            using = {1,2,3},
+            color = 'rgb "black"',
         },
     }    
 }:plot('output.png')
@@ -49,3 +68,4 @@ local g = gp{
 --g:plot('output.svg')
 --g:plot('output.pdf')
 --g:plot('output.wxt')
+--g:plot('output.qt')

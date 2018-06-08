@@ -27,7 +27,7 @@ example.lua.
 ## Source code and Contact
 
 Repository on [bitbucket][2].
-Contact me at ("lucas1h2negr3i@4gmail5.com"):gsub("%d", "").
+Contact me at lucashnegri@gmail.com.
 Many things are missing, so patches are more than welcome.
 
 [1]: http://www.gnuplot.info

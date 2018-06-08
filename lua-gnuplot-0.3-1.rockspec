@@ -1,18 +1,18 @@
 -- This file was automatically generated for the LuaDist project.
 
 package = "lua-gnuplot"
-version = "0.2-1"
+version = "0.3-1"
 
 -- LuaDist source
 source = {
-  tag = "0.2-1",
+  tag = "0.3-1",
   url = "git://github.com/LuaDist-testing/lua-gnuplot.git"
 }
 -- Original source
 -- source = {
---     url = "https://bitbucket.org/lucashnegri/lua-gnuplot/get/v0.2.tar.bz2",
---     md5 = "15e010691ab518b9b1b55e1d257f378a",
---     dir = "lucashnegri-lua-gnuplot-6119390145a8",
+--     url = "https://bitbucket.org/lucashnegri/lua-gnuplot/get/v0.3.tar.gz",
+--     md5 = "a4b9111669ed93da6302f2059bc2d2c7",
+--     dir = "lucashnegri-lua-gnuplot-168f39263328",
 -- }
 
 description = {

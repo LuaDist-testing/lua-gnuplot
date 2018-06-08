@@ -1,7 +1,7 @@
 --[[
 =================================================================
 *
-* Copyright (c) 2013 Lucas Hermann Negri
+* Copyright (c) 2013-2014 Lucas Hermann Negri
 *
 * Permission is hereby granted, free of charge, to any person
 * obtaining a copy of this software and associated documentation files
@@ -68,6 +68,14 @@ local quoted = {
 local special = {
     xformat     = 'set format x "%s"',
     yformat     = 'set format y "%s"',
+    width       = false,
+    height      = false,
+}
+
+-- outputs that should be persistent
+local persist = {
+    wxt = true,
+    qt  = true,
 }
 
 -- terminal types
@@ -76,6 +84,7 @@ gnuplot.terminal = {
     svg = "svg dashed enhanced",
     pdf = "pdfcairo linewidth 4 rounded fontscale 1.0",
     wxt = "wxt enhanced",
+    qt  = "qt enhanced",
 }
 
 local options = {
@@ -94,9 +103,13 @@ local options = {
         for k, v in pairs(g) do
             if k:sub(1,1) ~= '_' then
                 -- string. ex.: set logscale x or set xlabel "X label"
-                if type(v) == 'string' then
-                    if special[k] then
-                        add(code, special[k], v)
+                if type(v) == 'string' or type(v) == 'number' then
+                    if special[k] ~= nil then
+                        local fmt = special[k]
+                        
+                        if fmt ~= false then
+                            add(code, fmt, v)
+                        end
                     elseif quoted[k] then
                         add(code, 'set %s "%s"', k, v)
                     else
@@ -109,13 +122,31 @@ local options = {
             end
         end
     end,
+    
+    -- style
+    function(g, code)
+        if type(g.style) == 'table' then
+            for _, v in ipairs(g.style) do
+                add(code, 'set style %s', v)
+            end
+        end
+    end,
+    
+    -- constants
+    function(g, code)
+        if type(g.consts) == 'table' then
+            for k, v in pairs(g.consts) do
+                add(code, '%s = %s', k, v)
+            end
+        end
+    end,
 }
 
 -- returns a string with the gnuplot script
 function gnuplot.codegen(g, cmd, path)
     g._type  = g.type or path:match("%.([^%.]+)$")
     g.type   = nil
-    if g._type ~= 'wxt' then g.output = path end
+    if not persist[g._type] then g.output = path end
 
     local code = {}
     for _, f in ipairs(options) do
@@ -126,12 +157,26 @@ function gnuplot.codegen(g, cmd, path)
     
     for i = 1, #g.data do
         local d    = g.data[i]
-        local u    = d.file and 'u ' .. table.concat(d.using, ':') or ''
-        local name = d.file and string.format('"%s"', d[1]) or d[1]
-        add(plot_cmd, '%s %s w %s lt %d lw %d t "%s"',
-            name, u, d.with, d.type or i, d.width, d.title or '')
+        local u    = d.using and 'u ' .. table.concat(d.using, ':') or ''
+        local name = d.file  and string.format('"%s"', d[1]) or d[1]
+        
+        local opts = {name, u}
+        table.insert(opts, d.with      and 'w  ' .. d.with         )
+        table.insert(opts, d.width     and 'lw ' .. d.width        )
+        table.insert(opts, d.style     and 'ls ' .. d.style        )
+        table.insert(opts, d.type      and 'lt ' .. d.type         )
+        table.insert(opts, d.color     and 'lc ' .. d.color        )
+        table.insert(opts, d.ptype     and 'pt ' .. d.ptype        )
+        table.insert(opts, d.psize     and 'ps ' .. d.psize        )
+        table.insert(opts, d.pinterval and 'pi ' .. d.pinterval    )
+        table.insert(opts, 't "' .. (d.title or '') .. '"'         )
+        
+        add(plot_cmd, table.concat(opts, ' '))
+        g.__gpcache = nil
     end
+    
     add(code, cmd .. ' ' .. table.concat(plot_cmd, ', '))
+    if g._pause then add(code, 'pause ' .. g._pause) end
     
     return table.concat(code, '\n')
 end
@@ -139,9 +184,8 @@ end
 function gnuplot.do_plot(g, cmd, path)
     local code = gnuplot.codegen(g, cmd, path)
     local name = write_temp_file( code )
-    
     local opt = ""
-    if g._type == "wxt" then opt = '--persist' end
+    if persist[g._type] then opt = '--persist' end
     os.execute( string.format("%s %s %s",  gnuplot.bin, opt, name) )
     
     return g
@@ -185,24 +229,13 @@ setmetatable(plot_mt, {__gc = remove_temp_files }) -- ugly
 
 -- ** Data to plot **
 
-local datamt = {
-    -- defaults
-    __index = {
-        using = {1,2},
-        width = 2,
-        with  = 'l',
-    }
-}
-
 -- native gnuplot function
 function gnuplot.gpfunc(arg)
-    setmetatable(arg, datamt)
     return arg
 end
 
 -- simple: data already in a file
 function gnuplot.file(arg)
-    setmetatable(arg, datamt)
     arg.file = true
     return arg
 end
@@ -212,16 +245,41 @@ function gnuplot.array(arg)
     local array = {}
     local data  = arg[1]
     
-    for line = 1, #data[1] do
-        local aux = {}
-        for col = 1, #data do
-            table.insert(aux, data[col][line])
+    if not data.__gpcache then
+        for line = 1, #data[1] do
+            -- insert regular line
+            local aux = {}
+            for col = 1, #data do
+                table.insert(aux, data[col][line])
+            end
+            
+            table.insert(array, table.concat(aux, ' '))
+        
+             -- insert a blank line, for contour plots
+            if arg.blank and line % arg.blank == 0 then
+                table.insert(array, '')
+            end
         end
-        table.insert(array, table.concat(aux, ' '))
+        
+        local lines  = table.concat(array, '\n')
+        data.__gpcache = write_temp_file(lines)
     end
     
-    local lines = table.concat(array, '\n')
-    arg[1] = write_temp_file(lines)
+    arg[1] = data.__gpcache
+    return gnuplot.file(arg)
+end
+
+-- arg[1] must implement serialize(self), that should return a string to be
+-- saved in a temp file
+function gnuplot.custom(arg)
+    local data = arg[1]
+    
+    if not data.__gpcache then
+        local lines = data:serialize()
+        data.__gpcache = write_temp_file(lines)
+    end
+    
+    arg[1] = data.__gpcache
     return gnuplot.file(arg)
 end
 
